@@ -6,6 +6,7 @@ import {
   ThumbsUp, Minus, ThumbsDown, Loader2, BookOpen, Tag
 } from 'lucide-react'
 import { fetchProduct, fetchProductAspects, askQuestion } from '../utils/api'
+import { useAuth } from '../context/AuthContext'
 import ConfidenceMeter from '../components/ConfidenceMeter'
 import SentimentBar from '../components/SentimentBar'
 import EvidencePanel from '../components/EvidencePanel'
@@ -31,6 +32,7 @@ export default function ProductPage() {
   const [question, setQuestion] = useState('')
   const [qaHistory, setQaHistory] = useState([])
   const answerRef = useRef(null)
+  const { trackActivity, user } = useAuth()
 
   const { data: product, isLoading: productLoading } = useQuery({
     queryKey: ['product', productId],
@@ -47,6 +49,9 @@ export default function ProductPage() {
     onSuccess: (data, variables) => {
       setQaHistory(prev => [{ question: variables, ...data, id: Date.now() }, ...prev])
       setQuestion('')
+      if (user) {
+        trackActivity('ask_question', { productId, question: variables })
+      }
       setTimeout(() => answerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
     },
   })
