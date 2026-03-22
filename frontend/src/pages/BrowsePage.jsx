@@ -13,6 +13,10 @@ function ProductCard({ product, onProductClick }) {
 
   const handleClick = () => {
     onProductClick(product)
+    if (product.external_url) {
+      window.open(product.external_url, '_blank', 'noopener,noreferrer')
+      return
+    }
     navigate(`/product/${product.product_id}`)
   }
 
@@ -58,7 +62,18 @@ function ProductCard({ product, onProductClick }) {
               {product.average_rating} ({product.total_reviews} reviews)
             </div>
           </div>
-          <ChevronRight size={16} className="text-slate-300 group-hover:text-ink transition-colors" />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                navigate(`/product/${product.product_id}`)
+              }}
+              className="text-[10px] font-mono px-2 py-1 border border-slate-200 text-slate-600 hover:text-ink hover:border-ink"
+            >
+              Ask AI
+            </button>
+            <ChevronRight size={16} className="text-slate-300 group-hover:text-ink transition-colors" />
+          </div>
         </div>
       </div>
     </article>

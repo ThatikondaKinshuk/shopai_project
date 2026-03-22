@@ -133,6 +133,17 @@ export default function ProductPage() {
               </div>
             </div>
 
+            {product.external_url && (
+              <a
+                href={product.external_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-xs font-mono px-3 py-2 border border-ink text-ink hover:bg-ink hover:text-paper transition-colors mb-4"
+              >
+                Open Product Page
+              </a>
+            )}
+
             <p className="text-sm text-slate-500 leading-relaxed font-sans">{product.description}</p>
           </div>
 
