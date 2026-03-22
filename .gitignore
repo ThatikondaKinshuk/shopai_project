@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+*.egg
+
+# ChromaDB (large vector DB files — don't commit)
+backend/chroma_db/
+backend/data/raw/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.vite/
+*.log
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker volumes
+docker/volumes/

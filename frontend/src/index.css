@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background-color: #FAF7F2;
+    color: #0D0D0D;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3 {
+    font-family: 'Playfair Display', serif;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-ink text-paper px-6 py-3 font-sans font-medium text-sm tracking-wide
+           hover:bg-amber transition-colors duration-200 rounded-none;
+  }
+
+  .btn-ghost {
+    @apply border border-ink text-ink px-5 py-2.5 font-sans text-sm
+           hover:bg-ink hover:text-paper transition-colors duration-200 rounded-none;
+  }
+
+  .card {
+    @apply bg-white border border-slate-200 shadow-sm;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-mono rounded-sm;
+  }
+
+  .badge-positive { @apply bg-forest-light text-forest-dark; }
+  .badge-neutral  { @apply bg-amber-light text-amber-dark; }
+  .badge-negative { @apply bg-rouge-light text-rouge; }
+
+  .input-base {
+    @apply w-full border border-slate-200 bg-white px-4 py-3
+           font-sans text-sm text-ink placeholder:text-slate-400
+           focus:outline-none focus:border-ink transition-colors duration-150
+           rounded-none;
+  }
+
+  .section-label {
+    @apply text-xs font-mono font-medium tracking-widest uppercase text-slate-400;
+  }
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #F5F0E8; }
+::-webkit-scrollbar-thumb { background: #D1C9BB; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #B8AFA4; }
+
+/* loading shimmer */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, #F1EDE6 25%, #E8E2D9 50%, #F1EDE6 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite;
+}
