@@ -2,17 +2,57 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Search, Zap, Shield, BarChart2, ArrowRight } from 'lucide-react'
-import { fetchStats } from '../utils/api'
+import { fetchStats, fetchProducts } from '../utils/api'
+import { useAuth } from '../context/AuthContext'
 
 export default function HomePage() {
   const navigate = useNavigate()
   const [searchVal, setSearchVal] = useState('')
+  const { user, getAnalyticsSummary, trackActivity } = useAuth()
+  const analyticsSummary = getAnalyticsSummary()
 
   const { data: stats } = useQuery({
     queryKey: ['stats'],
     queryFn: fetchStats,
     retry: false,
   })
+
+  const { data: recommendationData } = useQuery({
+    queryKey: ['recommendation-products'],
+    queryFn: () => fetchProducts({ limit: 120 }),
+    staleTime: 60_000,
+  })
+
+  const recommendedProducts = (() => {
+    const products = recommendationData?.products || []
+    if (!products.length) return []
+
+    const preferredCategory = analyticsSummary?.preferences?.category
+    const preferredBrand = analyticsSummary?.preferences?.brand
+    const preferredRange = analyticsSummary?.preferences?.priceRange
+
+    const getRangeScore = (price) => {
+      if (!preferredRange || preferredRange === 'all') return 0
+      if (preferredRange === '1000+') return price >= 1000 ? 1 : 0
+      const [min, max] = preferredRange.split('-').map(Number)
+      if (!Number.isFinite(min) || !Number.isFinite(max)) return 0
+      return price >= min && price <= max ? 1 : 0
+    }
+
+    const ranked = [...products].sort((a, b) => {
+      const scoreA =
+        (preferredCategory && a.category === preferredCategory ? 2 : 0) +
+        (preferredBrand && a.brand === preferredBrand ? 2 : 0) +
+        getRangeScore(Number(a.price))
+      const scoreB =
+        (preferredCategory && b.category === preferredCategory ? 2 : 0) +
+        (preferredBrand && b.brand === preferredBrand ? 2 : 0) +
+        getRangeScore(Number(b.price))
+      return scoreB - scoreA
+    })
+
+    return ranked.slice(0, 6)
+  })()
 
   const handleSearch = (e) => {
     e.preventDefault()
@@ -126,6 +166,75 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* Personalized analytics + recommendations */}
+      {user && (
+        <section className="max-w-6xl mx-auto px-6 pb-16">
+          <div className="mb-8">
+            <p className="section-label mb-2">Personalized Insights</p>
+            <h2 className="font-display text-3xl text-ink">Analytics & Recommendations For You</h2>
+            <p className="text-sm text-slate-500 mt-2 font-sans">
+              Based on your browsing and AI question activity, here are tailored suggestions.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-3 mb-6">
+            <div className="card bg-white p-4">
+              <p className="section-label">Searches</p>
+              <p className="font-display text-2xl text-ink">{analyticsSummary.counts.searches}</p>
+            </div>
+            <div className="card bg-white p-4">
+              <p className="section-label">Product Views</p>
+              <p className="font-display text-2xl text-ink">{analyticsSummary.counts.productViews}</p>
+            </div>
+            <div className="card bg-white p-4">
+              <p className="section-label">Questions Asked</p>
+              <p className="font-display text-2xl text-ink">{analyticsSummary.counts.questionsAsked}</p>
+            </div>
+            <div className="card bg-white p-4">
+              <p className="section-label">Top Preference</p>
+              <p className="font-mono text-sm text-ink mt-1">
+                {analyticsSummary.preferences.brand || analyticsSummary.preferences.category || 'No preference yet'}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {recommendedProducts.map((p) => (
+              <article key={p.product_id} className="card bg-white p-4">
+                <div className="h-36 overflow-hidden border border-slate-100 mb-3">
+                  <img src={p.image_url} alt={p.title} className="w-full h-full object-cover" />
+                </div>
+                <p className="text-xs font-mono text-slate-400">{p.brand} · {p.category}</p>
+                <h3 className="font-display text-base text-ink mt-1 mb-2 leading-snug">{p.title}</h3>
+                <div className="flex items-center justify-between">
+                  <span className="font-mono font-semibold text-ink">${p.price}</span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        trackActivity('recommendation_click', { productId: p.product_id, source: 'home' })
+                        navigate(`/product/${p.product_id}`)
+                      }}
+                      className="text-[10px] font-mono px-2 py-1 border border-slate-200 text-slate-600 hover:text-ink"
+                    >
+                      Ask AI
+                    </button>
+                    <a
+                      href={p.external_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => trackActivity('recommendation_open_product_page', { productId: p.product_id, source: 'home' })}
+                      className="text-[10px] font-mono px-2 py-1 border border-ink text-ink hover:bg-ink hover:text-paper"
+                    >
+                      Open
+                    </a>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Architecture diagram */}
       <section className="bg-ink text-paper py-16 px-6">

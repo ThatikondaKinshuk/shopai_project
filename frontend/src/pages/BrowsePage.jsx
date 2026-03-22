@@ -152,7 +152,13 @@ export default function BrowsePage() {
 
   const handleProductClick = (product) => {
     if (user) {
-      trackActivity('view_product', { productId: product.product_id, productName: product.title })
+      trackActivity('view_product', {
+        productId: product.product_id,
+        productName: product.title,
+        category: product.category,
+        brand: product.brand,
+        price: product.price,
+      })
     }
   }
 

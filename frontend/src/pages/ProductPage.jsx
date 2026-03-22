@@ -12,14 +12,31 @@ import SentimentBar from '../components/SentimentBar'
 import EvidencePanel from '../components/EvidencePanel'
 import AspectRadar from '../components/AspectRadar'
 
-const SUGGESTED_QUESTIONS = [
-  'How is the battery life?',
-  'Is the build quality good?',
-  'Is it worth the price?',
-  'How does the sound quality compare?',
-  'What do most customers complain about?',
-  'Is it comfortable to use for long periods?',
-]
+const buildSuggestedQuestions = (product, analyticsSummary) => {
+  const category = product?.category || 'product'
+  const brand = product?.brand || 'this brand'
+  const price = product?.price || ''
+  const preferredBrand = analyticsSummary?.preferences?.brand
+  const preferredCategory = analyticsSummary?.preferences?.category
+
+  const base = [
+    `Is this ${category.toLowerCase()} worth $${price}?`,
+    `How does ${brand} compare with alternatives in ${category.toLowerCase()}?`,
+    `What are the most common complaints about this ${category.toLowerCase()}?`,
+    `Is build quality reliable for long-term use?`,
+    `Who should buy this and who should avoid it?`,
+    `What are the top pros and cons from reviews?`,
+  ]
+
+  if (preferredBrand && preferredBrand !== brand) {
+    base.unshift(`Compare this with ${preferredBrand} models in the same price range.`)
+  }
+  if (preferredCategory && preferredCategory === category) {
+    base.unshift(`How does this rank among top-rated ${category.toLowerCase()} options?`)
+  }
+
+  return Array.from(new Set(base)).slice(0, 8)
+}
 
 function SentimentIcon({ sentiment }) {
   if (sentiment === 'positive') return <ThumbsUp size={12} className="text-forest" />
@@ -32,7 +49,9 @@ export default function ProductPage() {
   const [question, setQuestion] = useState('')
   const [qaHistory, setQaHistory] = useState([])
   const answerRef = useRef(null)
-  const { trackActivity, user } = useAuth()
+  const viewTrackedRef = useRef('')
+  const { trackActivity, user, getAnalyticsSummary } = useAuth()
+  const analyticsSummary = getAnalyticsSummary()
 
   const { data: product, isLoading: productLoading } = useQuery({
     queryKey: ['product', productId],
@@ -61,6 +80,19 @@ export default function ProductPage() {
     if (!trimmed) return
     askMutation.mutate(trimmed)
   }
+
+  useEffect(() => {
+    if (!product || !user) return
+    if (viewTrackedRef.current === product.product_id) return
+    viewTrackedRef.current = product.product_id
+    trackActivity('view_product', {
+      productId: product.product_id,
+      productName: product.title,
+      category: product.category,
+      brand: product.brand,
+      price: product.price,
+    })
+  }, [product?.product_id])
 
   if (productLoading) {
     return (
@@ -92,6 +124,7 @@ export default function ProductPage() {
   }
 
   const ratingColor = product.average_rating >= 4.2 ? 'text-forest' : product.average_rating >= 3.5 ? 'text-amber' : 'text-rouge'
+  const suggestedQuestions = buildSuggestedQuestions(product, analyticsSummary)
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-10 animate-fade-in">
@@ -213,7 +246,7 @@ export default function ProductPage() {
             <div className="mt-4">
               <p className="section-label mb-2">Suggested questions</p>
               <div className="flex flex-wrap gap-2">
-                {SUGGESTED_QUESTIONS.map(q => (
+                {suggestedQuestions.map(q => (
                   <button
                     key={q}
                     onClick={() => handleAsk(q)}
