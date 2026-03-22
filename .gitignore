@@ -20,6 +20,8 @@ frontend/dist/
 frontend/.vite/
 *.log
 
+# NOTE: docs/ is intentionally NOT ignored - used for GitHub Pages
+
 # Environment
 .env
 .env.*
