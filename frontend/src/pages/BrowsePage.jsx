@@ -26,10 +26,21 @@ function ProductCard({ product, onProductClick }) {
         <span className="badge bg-slate-100 text-slate-600 font-mono">{product.category}</span>
       </div>
 
-      {/* Product icon placeholder */}
-      <div className="w-full h-32 bg-slate-50 border border-slate-100 flex items-center justify-center mb-5 group-hover:bg-slate-100 transition-colors">
-        <div className="font-display text-4xl text-slate-200 select-none">
-          {product.title.charAt(0)}
+      {/* Product image */}
+      <div className="w-full h-36 bg-slate-50 border border-slate-100 mb-5 overflow-hidden">
+        <img
+          src={product.image_url}
+          alt={product.title}
+          loading="lazy"
+          onError={(e) => {
+            e.currentTarget.style.display = 'none'
+            const fallback = e.currentTarget.nextElementSibling
+            if (fallback) fallback.style.display = 'flex'
+          }}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+        <div className="hidden w-full h-full items-center justify-center bg-slate-100">
+          <span className="font-display text-4xl text-slate-300 select-none">{product.title.charAt(0)}</span>
         </div>
       </div>
 

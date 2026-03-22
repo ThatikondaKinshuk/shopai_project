@@ -105,8 +105,20 @@ export default function ProductPage() {
         <aside className="md:col-span-2 space-y-5">
           {/* Product card */}
           <div className="card bg-white p-6">
-            <div className="w-full h-36 bg-slate-50 border border-slate-100 flex items-center justify-center mb-5">
-              <span className="font-display text-6xl text-slate-200">{product.title.charAt(0)}</span>
+            <div className="w-full h-52 bg-slate-50 border border-slate-100 mb-5 overflow-hidden">
+              <img
+                src={product.image_url}
+                alt={product.title}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none'
+                  const fallback = e.currentTarget.nextElementSibling
+                  if (fallback) fallback.style.display = 'flex'
+                }}
+                className="w-full h-full object-cover"
+              />
+              <div className="hidden w-full h-full items-center justify-center bg-slate-100">
+                <span className="font-display text-6xl text-slate-300">{product.title.charAt(0)}</span>
+              </div>
             </div>
 
             <span className="badge bg-slate-100 text-slate-600 font-mono mb-3 inline-block">{product.category}</span>

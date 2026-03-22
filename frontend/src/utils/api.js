@@ -6,99 +6,49 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Mock products data for demo
-const MOCK_PRODUCTS = [
-  {
-    product_id: "281620DF23",
-    title: "ZenTech Tablets Pro 600",
-    brand: "ZenTech",
-    category: "Tablets",
-    price: 115.9,
-    average_rating: 3.6,
-    total_reviews: 30,
-    description: "The ZenTech Tablets Pro features advanced technology designed for everyday use. With premium build quality and outstanding performance, this tablets delivers an exceptional experience.",
+const SEED_BRANDS = ['ZenTech', 'PixelBright', 'NovaGear', 'AeroCore', 'EchoWave', 'Luma', 'Orbit', 'Voltix']
+const SEED_CATEGORIES = ['Headphones', 'Laptops', 'Smartphones', 'Cameras', 'Tablets', 'Speakers', 'Audio', 'Wearables']
+const SEED_COLORS = ['Black', 'Silver', 'Blue', 'Space Gray', 'White', 'Forest Green', 'Rose Gold']
+
+const money = (n) => Number(n.toFixed(2))
+const toTitle = (str) => str.charAt(0).toUpperCase() + str.slice(1)
+
+// Build a larger in-browser catalog for GitHub Pages mode.
+const MOCK_PRODUCTS = Array.from({ length: 72 }, (_, i) => {
+  const category = SEED_CATEGORIES[i % SEED_CATEGORIES.length]
+  const brand = SEED_BRANDS[i % SEED_BRANDS.length]
+  const tier = ['Core', 'Plus', 'Pro', 'Ultra'][i % 4]
+  const model = 200 + i * 7
+  const priceBase = 59 + (i % 12) * 34 + (category.length * 3)
+  const rating = 3.3 + ((i * 3) % 14) / 10
+  const reviewCount = 18 + (i % 20) * 9
+  const weightKg = (0.15 + (i % 7) * 0.25).toFixed(2)
+  const warranty = `${1 + (i % 3)} Year`
+  const color = SEED_COLORS[i % SEED_COLORS.length]
+  const productId = `SMAI${String(i + 1).padStart(4, '0')}`
+  const title = `${brand} ${toTitle(category)} ${tier} ${model}`
+
+  return {
+    product_id: productId,
+    title,
+    brand,
+    category,
+    price: money(priceBase + (i % 5) * 6.49),
+    average_rating: money(Math.min(rating, 4.9)),
+    total_reviews: reviewCount,
+    // Picsum provides deterministic CDN images by seed, good for static hosting.
+    image_url: `https://picsum.photos/seed/${productId.toLowerCase()}/800/600`,
+    description: `${title} is designed for everyday performance with reliable quality, smart features, and balanced value for money. Great for users who want dependable ${category.toLowerCase()} hardware without compromise.`,
     specifications: {
-      Brand: "ZenTech",
-      Category: "Tablets",
-      Price: "$115.9",
-      Warranty: "2 Year",
-      Weight: "2.4 kg",
-      Color: "Space Gray"
-    }
-  },
-  {
-    product_id: "D1D2B3804B",
-    title: "PixelBright Tablets Pro 900",
-    brand: "PixelBright",
-    category: "Tablets",
-    price: 363.88,
-    average_rating: 3.7,
-    total_reviews: 30,
-    description: "The PixelBright Tablets Pro features advanced technology designed for everyday use. With premium build quality and outstanding performance.",
-    specifications: {
-      Brand: "PixelBright",
-      Category: "Tablets",
-      Price: "$363.88",
-      Warranty: "2 Year",
-      Weight: "2.0 kg",
-      Color: "Silver"
-    }
-  },
-  {
-    product_id: "AB3F8512E5",
-    title: "ZenTech Headphones Pro 500",
-    brand: "ZenTech",
-    category: "Headphones",
-    price: 103.47,
-    average_rating: 3.4,
-    total_reviews: 30,
-    description: "The ZenTech Headphones Pro features advanced technology designed for everyday use. Crystal clear sound and comfortable fit.",
-    specifications: {
-      Brand: "ZenTech",
-      Category: "Headphones",
-      Price: "$103.47",
-      Warranty: "1 Year",
-      Weight: "0.25 kg",
-      Color: "Black"
-    }
-  },
-  {
-    product_id: "C4E5F6G7H8",
-    title: "SoundWave Bluetooth Speaker",
-    brand: "SoundWave",
-    category: "Audio",
-    price: 89.99,
-    average_rating: 4.2,
-    total_reviews: 45,
-    description: "Premium wireless speaker with 360-degree sound and 12-hour battery life. Perfect for outdoor adventures.",
-    specifications: {
-      Brand: "SoundWave",
-      Category: "Audio",
-      Price: "$89.99",
-      Warranty: "1 Year",
-      Weight: "0.6 kg",
-      Color: "Blue"
-    }
-  },
-  {
-    product_id: "I9J0K1L2M3",
-    title: "SmartWatch Pro Edition",
-    brand: "SmartWatch",
-    category: "Wearables",
-    price: 249.99,
-    average_rating: 4.1,
-    total_reviews: 60,
-    description: "Advanced smartwatch with fitness tracking, heart rate monitor, and 5-day battery life.",
-    specifications: {
-      Brand: "SmartWatch",
-      Category: "Wearables",
-      Price: "$249.99",
-      Warranty: "2 Year",
-      Weight: "0.05 kg",
-      Color: "Space Black"
-    }
+      Brand: brand,
+      Category: category,
+      Price: `$${money(priceBase + (i % 5) * 6.49)}`,
+      Warranty: warranty,
+      Weight: `${weightKg} kg`,
+      Color: color,
+    },
   }
-]
+})
 
 // Try to fetch from backend, fallback to mock data
 const fetchWithFallback = async (fn) => {
@@ -160,13 +110,14 @@ export const fetchProductAspects = async (productId) => {
   if (result) return result
   
   // Mock implementation
+  const idx = Number((productId || '0').replace(/\D/g, '').slice(-2)) || 1
   return {
-    aspects: [
-      { name: 'build_quality', score: 0.85, sentiment: 'positive' },
-      { name: 'battery_life', score: 0.78, sentiment: 'positive' },
-      { name: 'price_value', score: 0.72, sentiment: 'neutral' },
-      { name: 'performance', score: 0.88, sentiment: 'positive' },
-    ]
+    aspects: {
+      build_quality: { positive: 40 + (idx % 20), neutral: 15 + (idx % 8), negative: 8 + (idx % 7) },
+      battery_life: { positive: 36 + (idx % 18), neutral: 12 + (idx % 10), negative: 9 + (idx % 6) },
+      price_value: { positive: 28 + (idx % 16), neutral: 20 + (idx % 9), negative: 12 + (idx % 5) },
+      performance: { positive: 44 + (idx % 15), neutral: 11 + (idx % 7), negative: 7 + (idx % 6) },
+    },
   }
 }
 
@@ -203,10 +154,12 @@ export const fetchStats = async () => {
   if (result) return result
   
   // Mock implementation
+  const totalReviewChunks = MOCK_PRODUCTS.reduce((sum, p) => sum + p.total_reviews, 0)
   return {
     total_products: MOCK_PRODUCTS.length,
-    total_reviews: 165,
-    avg_rating: 3.8
+    total_review_chunks: totalReviewChunks,
+    vector_db: 'ChromaDB',
+    embedding_model: 'all-MiniLM-L6-v2',
   }
 }
 
