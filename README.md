@@ -308,7 +308,7 @@ The system is evaluated on three axes as described in the project proposal:
 
 ## 👤 Author
 
-**Kinshuk Jain**
+**Kinshuk Thatikonda**
 MS Data Science · University of Massachusetts Dartmouth · GPA 3.83/4.0
 Data Analyst / Data Engineer @ L.L.Bean
 
