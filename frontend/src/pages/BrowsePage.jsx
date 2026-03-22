@@ -5,7 +5,15 @@ import { Search, SlidersHorizontal, Star, ChevronRight } from 'lucide-react'
 import { fetchProducts } from '../utils/api'
 import { useAuth } from '../context/AuthContext'
 
-const CATEGORIES = ['All', 'Headphones', 'Laptops', 'Smartphones', 'Cameras', 'Tablets', 'Speakers', 'Audio', 'Wearables']
+const CATEGORIES = ['All', 'Headphones', 'Laptops', 'Smartphones', 'Cameras', 'Tablets', 'Speakers', 'Audio', 'Wearables', 'Gaming', 'Monitors']
+const BRANDS = ['All Brands', 'Apple', 'Samsung', 'Dell', 'Lenovo', 'HP', 'ASUS', 'Acer', 'MSI', 'Sony', 'Bose', 'JBL', 'Canon', 'Nikon', 'Google', 'OnePlus', 'Garmin', 'Fitbit', 'Huawei', 'Microsoft', 'Xiaomi', 'Razer', 'Sonos']
+const PRICE_RANGES = [
+  { label: 'All Prices', value: 'all' },
+  { label: '$0 - $199', value: '0-199' },
+  { label: '$200 - $499', value: '200-499' },
+  { label: '$500 - $999', value: '500-999' },
+  { label: '$1000+', value: '1000+' },
+]
 
 function ProductCard({ product, onProductClick }) {
   const navigate = useNavigate()
@@ -96,14 +104,17 @@ export default function BrowsePage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [inputVal, setInputVal] = useState(searchParams.get('q') || '')
   const [activeCategory, setActiveCategory] = useState('All')
+  const [activeBrand, setActiveBrand] = useState('All Brands')
+  const [activePriceRange, setActivePriceRange] = useState('all')
   const { trackActivity, user } = useAuth()
 
   const q = searchParams.get('q') || undefined
   const category = activeCategory === 'All' ? undefined : activeCategory
+  const brand = activeBrand === 'All Brands' ? undefined : activeBrand
 
   const { data, isLoading } = useQuery({
-    queryKey: ['products', q, category],
-    queryFn: () => fetchProducts({ q, category, limit: 40 }),
+    queryKey: ['products', q, category, brand, activePriceRange],
+    queryFn: () => fetchProducts({ q, category, brand, priceRange: activePriceRange, limit: 80 }),
   })
 
   const products = data?.products || []
@@ -111,7 +122,7 @@ export default function BrowsePage() {
   const handleSearch = (e) => {
     e.preventDefault()
     if (user) {
-      trackActivity('search', { query: inputVal, category })
+      trackActivity('search', { query: inputVal, category, brand, priceRange: activePriceRange })
     }
     setSearchParams(inputVal ? { q: inputVal } : {})
   }
@@ -120,6 +131,22 @@ export default function BrowsePage() {
     setActiveCategory(cat)
     if (user) {
       trackActivity('filter_category', { category: cat })
+    }
+  }
+
+  const handleBrandChange = (e) => {
+    const value = e.target.value
+    setActiveBrand(value)
+    if (user) {
+      trackActivity('filter_brand', { brand: value })
+    }
+  }
+
+  const handlePriceRangeChange = (e) => {
+    const value = e.target.value
+    setActivePriceRange(value)
+    if (user) {
+      trackActivity('filter_price_range', { priceRange: value })
     }
   }
 
@@ -153,6 +180,26 @@ export default function BrowsePage() {
             <Search size={15} />
           </button>
         </form>
+
+        <select
+          value={activeBrand}
+          onChange={handleBrandChange}
+          className="input-base min-w-[170px]"
+        >
+          {BRANDS.map((b) => (
+            <option key={b} value={b}>{b}</option>
+          ))}
+        </select>
+
+        <select
+          value={activePriceRange}
+          onChange={handlePriceRangeChange}
+          className="input-base min-w-[140px]"
+        >
+          {PRICE_RANGES.map((r) => (
+            <option key={r.value} value={r.value}>{r.label}</option>
+          ))}
+        </select>
       </div>
 
       {/* Category tabs */}

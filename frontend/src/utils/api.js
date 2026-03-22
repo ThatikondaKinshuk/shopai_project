@@ -55,56 +55,97 @@ const normalizeProduct = (raw, i = 0) => {
   }
 }
 
-const SEED_BRANDS = ['ZenTech', 'PixelBright', 'NovaGear', 'AeroCore', 'EchoWave', 'Luma', 'Orbit', 'Voltix']
-const SEED_CATEGORIES = ['Headphones', 'Laptops', 'Smartphones', 'Cameras', 'Tablets', 'Speakers', 'Audio', 'Wearables']
-const SEED_COLORS = ['Black', 'Silver', 'Blue', 'Space Gray', 'White', 'Forest Green', 'Rose Gold']
+const SEED_COLORS = ['Black', 'Silver', 'Blue', 'Space Gray', 'White', 'Forest Green', 'Rose Gold', 'Titanium']
 
 const money = (n) => Number(n.toFixed(2))
 const toTitle = (str) => str.charAt(0).toUpperCase() + str.slice(1)
 
-// Build a larger in-browser catalog for GitHub Pages mode.
-const MOCK_PRODUCTS = Array.from({ length: 72 }, (_, i) => {
-  const category = SEED_CATEGORIES[i % SEED_CATEGORIES.length]
-  const brand = SEED_BRANDS[i % SEED_BRANDS.length]
-  const tier = ['Core', 'Plus', 'Pro', 'Ultra'][i % 4]
-  const model = 200 + i * 7
-  const priceBase = 59 + (i % 12) * 34 + (category.length * 3)
-  const rating = 3.3 + ((i * 3) % 14) / 10
-  const reviewCount = 18 + (i % 20) * 9
-  const weightKg = (0.15 + (i % 7) * 0.25).toFixed(2)
-  const warranty = `${1 + (i % 3)} Year`
-  const color = SEED_COLORS[i % SEED_COLORS.length]
-  const productId = `SMAI${String(i + 1).padStart(4, '0')}`
-  const title = `${brand} ${toTitle(category)} ${tier} ${model}`
+const CATEGORY_MANUFACTURERS = {
+  Smartphones: ['Apple', 'Samsung', 'Google', 'OnePlus', 'Xiaomi', 'Motorola'],
+  Wearables: ['Apple', 'Samsung', 'Garmin', 'Fitbit', 'Huawei', 'Amazfit'],
+  Laptops: ['Dell', 'Lenovo', 'HP', 'Apple', 'ASUS', 'Acer', 'MSI'],
+  Tablets: ['Apple', 'Samsung', 'Lenovo', 'Microsoft', 'Xiaomi'],
+  Headphones: ['Sony', 'Bose', 'JBL', 'Sennheiser', 'Apple', 'Beats'],
+  Speakers: ['JBL', 'Bose', 'Sony', 'Sonos', 'Marshall'],
+  Cameras: ['Canon', 'Nikon', 'Sony', 'Fujifilm', 'Panasonic'],
+  Audio: ['JBL', 'Sony', 'Bose', 'Sennheiser', 'Audio-Technica'],
+  Gaming: ['ASUS', 'MSI', 'Razer', 'Lenovo', 'Acer'],
+  Monitors: ['Dell', 'LG', 'Samsung', 'ASUS', 'Acer'],
+}
 
-  return {
-    product_id: productId,
-    title,
-    brand,
-    category,
-    price: money(priceBase + (i % 5) * 6.49),
-    average_rating: money(Math.min(rating, 4.9)),
-    total_reviews: reviewCount,
-    image_url: imageFallback(productId),
-    external_url: amazonSearchUrl(title),
-    description: `${title} is designed for everyday performance with reliable quality, smart features, and balanced value for money. Great for users who want dependable ${category.toLowerCase()} hardware without compromise.`,
-    specifications: {
-      Brand: brand,
-      Category: category,
-      Price: `$${money(priceBase + (i % 5) * 6.49)}`,
-      Warranty: warranty,
-      Weight: `${weightKg} kg`,
-      Color: color,
-    },
-  }
+const CATEGORY_PRICE_RANGES = {
+  Smartphones: [299, 499, 699, 899, 1099, 1299],
+  Wearables: [149, 249, 349, 449, 599],
+  Laptops: [499, 799, 1099, 1399, 1799, 2199],
+  Tablets: [199, 349, 499, 699, 899],
+  Headphones: [79, 129, 179, 249, 349],
+  Speakers: [59, 99, 149, 229, 329],
+  Cameras: [449, 699, 999, 1499, 2299],
+  Audio: [69, 119, 189, 279, 399],
+  Gaming: [699, 999, 1399, 1799, 2499],
+  Monitors: [129, 219, 329, 499, 799],
+}
+
+const TIER_NAMES = ['SE', 'Core', 'Plus', 'Pro', 'Ultra', 'Max']
+
+const MOCK_PRODUCTS = Object.entries(CATEGORY_MANUFACTURERS).flatMap(([category, brands], ci) => {
+  const prices = CATEGORY_PRICE_RANGES[category] || [199, 399, 599]
+  return brands.flatMap((brand, bi) => {
+    return prices.map((basePrice, pi) => {
+      const idx = ci * 100 + bi * 10 + pi
+      const model = 100 + ci * 9 + bi * 5 + pi * 3
+      const tier = TIER_NAMES[(ci + bi + pi) % TIER_NAMES.length]
+      const title = `${brand} ${category.slice(0, -1)} ${tier} ${model}`
+      const productId = `SMAI${String(idx + 1).padStart(5, '0')}`
+      const reviewCount = 20 + ((idx * 13) % 380)
+      const rating = 3.5 + ((idx * 7) % 14) / 10
+      const price = money(basePrice + ((idx % 4) * 19.99))
+
+      return {
+        product_id: productId,
+        title,
+        brand,
+        category,
+        price,
+        average_rating: money(Math.min(rating, 4.9)),
+        total_reviews: reviewCount,
+        image_url: imageFallback(`${brand}-${category}-${model}`),
+        external_url: amazonSearchUrl(`${brand} ${category} ${tier}`),
+        description: `${title} delivers strong ${category.toLowerCase()} performance with modern features, balanced battery life, and dependable build quality for daily use.`,
+        specifications: {
+          Brand: brand,
+          Category: category,
+          Price: `$${price}`,
+          Warranty: `${1 + (idx % 3)} Year`,
+          Weight: `${(0.2 + (idx % 9) * 0.18).toFixed(2)} kg`,
+          Color: SEED_COLORS[idx % SEED_COLORS.length],
+        },
+      }
+    })
+  })
 })
 
 let cachedLiveCatalog = []
 
-const applySearchFilters = (products, q, category) => {
+const applySearchFilters = (products, q, category, brand, priceRange) => {
   let filtered = products
   if (category) {
     filtered = filtered.filter((p) => String(p.category).toLowerCase().includes(String(category).toLowerCase()))
+  }
+  if (brand) {
+    filtered = filtered.filter((p) => String(p.brand).toLowerCase() === String(brand).toLowerCase())
+  }
+  if (priceRange && priceRange !== 'all') {
+    if (priceRange === '1000+') {
+      filtered = filtered.filter((p) => Number(p.price) >= 1000)
+    } else {
+      const parts = String(priceRange).split('-')
+      const min = Number(parts[0])
+      const max = Number(parts[1])
+      if (Number.isFinite(min) && Number.isFinite(max)) {
+        filtered = filtered.filter((p) => Number(p.price) >= min && Number(p.price) <= max)
+      }
+    }
   }
   if (q) {
     const query = String(q).toLowerCase()
@@ -172,14 +213,14 @@ const fetchWithFallback = async (fn) => {
   }
 }
 
-export const fetchProducts = async ({ q, category, limit = 20, offset = 0 } = {}) => {
+export const fetchProducts = async ({ q, category, brand, priceRange = 'all', limit = 20, offset = 0 } = {}) => {
   const result = await fetchWithFallback(() => 
-    api.get('/products', { params: { q, category, limit, offset } }).then(r => r.data)
+    api.get('/products', { params: { q, category, brand, min_price: priceRange, limit, offset } }).then(r => r.data)
   )
   
   if (result?.products?.length) {
     const normalized = result.products.map((p, i) => normalizeProduct(p, i))
-    const filtered = applySearchFilters(normalized, q, category)
+    const filtered = applySearchFilters(normalized, q, category, brand, priceRange)
     cachedLiveCatalog = normalized
     return {
       products: filtered.slice(offset, offset + limit),
@@ -191,7 +232,7 @@ export const fetchProducts = async ({ q, category, limit = 20, offset = 0 } = {}
 
   const amazonLive = await fetchAmazonRealtimeCatalog({ q, limit, offset })
   if (amazonLive?.length) {
-    const filtered = applySearchFilters(amazonLive, q, category)
+    const filtered = applySearchFilters(amazonLive, q, category, brand, priceRange)
     cachedLiveCatalog = amazonLive
     return {
       products: filtered.slice(offset, offset + limit),
@@ -203,7 +244,7 @@ export const fetchProducts = async ({ q, category, limit = 20, offset = 0 } = {}
 
   const publicLive = await fetchPublicLiveCatalog()
   if (publicLive?.length) {
-    const filtered = applySearchFilters(publicLive, q, category)
+    const filtered = applySearchFilters(publicLive, q, category, brand, priceRange)
     cachedLiveCatalog = publicLive
     return {
       products: filtered.slice(offset, offset + limit),
@@ -214,7 +255,7 @@ export const fetchProducts = async ({ q, category, limit = 20, offset = 0 } = {}
   }
 
   // Final fallback
-  let filtered = applySearchFilters(MOCK_PRODUCTS, q, category)
+  let filtered = applySearchFilters(MOCK_PRODUCTS, q, category, brand, priceRange)
   
   return {
     products: filtered.slice(offset, offset + limit),
